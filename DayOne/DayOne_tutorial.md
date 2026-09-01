@@ -9,7 +9,7 @@ Today, we'll be working with the Qfly dataset. We'll use four key methods to exa
 Let's get into it!
 
 ### Open R and load in required packages
-First, set you working directory to something logical (e.g., a 'DayOne' folder on your desktop), and run all code from within that directory.
+First, set your working directory to something logical (e.g., a 'DayOne' folder on your desktop), and run all code from within that directory.
 ```
 library(vcfR)
 library(adegenet)
@@ -49,7 +49,7 @@ pFst <- Qfly_Fst$Pvalues
 write.table(Fst, "Fst.txt", sep="\t")
 write.table(pFst, "Fst_pvalue.txt", sep="\t")
 ```
-In this command, we are applying the stamppFst function to the gl.snp2 genlight object. This code produces two output files - one is a matrix of the pairwise Fst values and the other is a matrix of Fst p-values. 
+In this command, we are applying the stamppFst function to the gl.snp2 genlight object. This code produces two output files - one is a matrix of the pairwise Fst values and the other is a matrix of Fst p-values (i.e., telling us whether the differentiation is statistically significant or not). 
 
 Let's create a heatmap of the FST values using the 'melt' function from R's reshape2 package:
 ```
@@ -122,7 +122,7 @@ ggplot(data3, aes(x=PC1, y=PC2, color=pop)) +
   ylab("PC2 (1.34%)")
 ```
 This PCA plot should show four main clusters, three of which are invasive (with the other corresponding to native and expanded populations).
-Does this meet your expectations? What does it say about thow closely related the expanded and invasive populations are to the native ones? Does this make sense?
+Does this meet your expectations? What does it say about how closely related the expanded and invasive populations are to the native ones? Does this make sense?
 
 ### Admixture
 Let's look at admixture patterns using the LEA package in R. First, install the packages:
@@ -154,7 +154,7 @@ The next step is to work out the cross-entropy criterion for all runs in the sNM
 ```
 plot(projectalpha, col = "maroon4", pch = 19, cex = 1.2)
 ```
-This plot shows that 3 ancestral populations is the optimal number, as that is the number of ancestral populations with the lowest cross-entropy value.
+This plot shows that 3 is the optimal number of ancestral populations, as that is the number of with the lowest cross-entropy value.
 Now you can work out the best run (i.e., replicate) for each of the tested K-values:
 ```
 best2 <- which.min(cross.entropy(projectalpha, K = 2))
@@ -202,19 +202,19 @@ qmatrix$Ind <- Ind
 Site <- popIds$V3
 qmatrix$Site <- Site
 ```
-Convert dataframe to long format:
+Convert the dataframe to long format:
 ```
 qlong <- melt(qmatrix, id.vars=c("Ind","Site"))
 head(qlong)
 ```
-Adjust facet labels to the three main groups:
+Adjust the facet labels to show the three main groups:
 ```
 levels(qlong$Site)
 facet.labs <- c("Native", "Expanded", "Invasive")
 levels(qlong$Site) <- facet.labs
 levels(qlong$Site)
 ```
-Define colour palette:
+Define the colour palette:
 ```
 pal <- colorRampPalette(c("#51692d","#56ba32","#f1c039")) 
 cols <- pal(length(unique(qlong$variable)))
@@ -301,7 +301,7 @@ nInd(x2)
 nInd(x2.sup)
 dapc2 <- dapc(x2,n.pca=11,n.da=15)
 ```
-You should find an improvement in the percentage of corrrectly assigned individuals (to around 65%). You should also find a pattern in which the source for expanded populations is the native populations. The invaded populations show assignment to themselves, but we are looking at <25 supplementary individuals so this is not surprising. As noted above, the best way to use this method is in the context of inavsion genomics is to try to trace the source populations for intercepted border samples, or other invasive populations of unknown origin.
+You should find an improvement in the percentage of corrrectly assigned individuals (to around 65%). You should also find a pattern in which the source for expanded populations is the native populations. The invaded populations show assignment to themselves, but we are looking at <25 supplementary individuals, so this is not surprising. As noted above, the best way to use this method in the context of inavsion genomics is to try to trace the source populations for intercepted border samples, or other invasive populations of unknown origin.
 
 Congratulations - this is the official end of Day One! You should now have a good feel for how to generate FST, PCA, Admixture, and Population assignment plots for your own data, including the use of different population labelling techniques to best interpret your results.
 
