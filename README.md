@@ -4,36 +4,50 @@
 https://www.physalia-courses.org/courses-workshops/invasion-genomics/
 
 ### Dr Ang McGaughran
-### 8th, 10th and 11th September 2025
+### 12th, 14th and 16th October 2026
 
 ### COURSE OVERVIEW
-This course on invasion genomics offers a comprehensive three-day program designed to introduce participants to key concepts and techniques in the field. Through a combination of recorded lectures and self-paced tutorials, attendees will delve into three main topics, including movement dynamics, adaptation dynamics, and environment dynamics relevant to invasive species. On Day One, participants will learn a variety of methods for understanding population structure and introduction pathways. Day Two will include an introduction to selection outlier scanning methods. Day Three will focus on the role of environmental variables in determining adaptive outcomes.
+This course on invasion genomics offers a comprehensive three-day program designed to introduce participants to key concepts and techniques in the field. Through a combination of recorded lectures and self-paced tutorials, attendees will explore three main topics: movement dynamics, adaptation dynamics, and genotype-by-environment interactions relevant to invasive species.
 
-Participants will gain fundamental knowledge (video presentations) and practical experience (self-paced code tutorials) that advances their research in this rapidly evolving field. Participants will also be able to interact with the instructors regarding any issues encountered or discussion points raised.
+On Day1, participants will learn a variety of methods for understanding population diversity and differentiation. Day2 will include an introduction to selection outlier scanning methods. Day3 will focus on the role of environmental variables in shaping adaptive outcomes.
+
+Participants will gain both fundamental knowledge and practical experience, providing a strong starting point for conducting their own research in this rapidly evolving field. They will also have the opportunity to interact with the instructor to discuss questions and address any challenges encountered during the course.
 
 ### TARGET AUDIENCE
-The course is aimed at graduate students, researchers, and professionals interested in invasion genomics. Participants should have a basic understanding of genetics/genomics and evolutionary biology, as well as familiarity with R. To ensure you can follow the course effectively, we recommend that participants without prior experience in R complete this R tutorial (https://r-coder.com/r-introduction/r-basics/) before attending.
+This course is aimed at graduate students, researchers, and professionals interested in an introduction to invasion genomics. Participants should have a basic understanding of genetics/genomics and evolutionary biology, as well as familiarity with R.
+
+We recommend that participants without prior experience in R complete an introductory R tutorial before attending.
 
 ### BACKGROUND READING
-•    McGaughran A, Liggins L, Marske KA, Dawson MD, Schiebelhut LM, Lavery S, Knowles L, Moritz C, Riginos C (2022). Comparative phylogeography in the genomic age: opportunities and challenges. Journal of Biogegoraphy, 49, 2130-2144. https://doi.org/10.1111/jbi.14481.
+• McGaughran A, Rollins LA, Dhami MK (2026). Six recommendations when applying genomic tools to invasion biology. Biological Invasions, 28, 1. https://doi.org/10.1007/s10530-025-03718-x
 
-•    North HL, McGaughran A, Jiggins C (2021). Insights into invasive species from whole-genome resequencing. Molecular Ecology, 30, 6289-6308. https://doi.org/10.1111/mec.15999.
+• McGaughran A, Dhami MK, Parvizi E, Vaughan AL, Gleeson DM, Hodgins KA, Rollins LA, Tepolt CK, Turner KG, Atsawawaranunt K, Battlay P, Congrains C, Crottini A, Dennis TPQ, Lange C, Liu XP, Matheson P, North HL, Popovic I, Rius M, Santure AW, Stuart KC, Tan HZ, Wang C, Wilson J (2024). Genomic tools in biological invasions: Current state and future frontiers. Genome Biology and Evolution, 16, evad230. https://doi.org/10.1093/gbe/evad230
+
+• North HL, McGaughran A, Jiggins C (2021). Insights into invasive species from whole-genome resequencing. Molecular Ecology, 30, 6289–6308. https://doi.org/10.1111/mec.15999
 
 ### SESSION CONTENT
-#### Monday - 8th September (DayOne)
+During the course days, recorded lectures and self-guided practicals (accompanied by annotated scripts) will be released, allowing participants to progress at their own pace. Live remote support will be provided throughout to accommodate different time zones and assist with any questions.
+
+#### Monday - 12th October (DayOne)
 Movement dynamics: inferring invasion sources, dispersal pathways, and population structure.
-Recorded lecture: Introduction to invasion genomics and the key kinds of research questions and methods we use to address them. We’ll also cover analytical challenges associated with invasive species projects.
-Tutorial 1: Analysis of population structure: FST, PCA, sNMF, population assignment.
 
-#### Wednesday - 10th September (DayTwo)
+Recorded lecture: Introduction to invasion genomics, including key research questions, commonly used methods, and analytical challenges associated with invasive species studies.
+
+Tutorial 1: Genetic diversity and differentiation
+
+#### Wednesday - 14th October (DayTwo)
 Adaptation dynamics: inferring selection processes in the invaded range.
-Recorded lecture: Selection analyses and how we can use them to infer adaptive process in invasive species/populations.
-Tutorial 2: Analysis using outlier detection methods: PCAdapt, BayPass
 
-#### Thursday - 11th September (DayThree)
-Environment dynamics: inferring adaptation to local conditions.
-Recorded lecture: Introduction to environmental association analysis and its potential use for understanding invasive species adaptation.
-Tutorial 3: Analysis of three genotype-environment association (GEA) packages: RDA, LFMM, GF.
+Recorded lecture: Overview of selection analyses and how they can be used to infer adaptive processes in invasive species and populations.
+
+Tutorial 2: Selection outlier detection methods
+
+#### Thursday - 16th October (DayThree)
+Role of the environment: inferring adaptation to local conditions using GEA
+
+Recorded lecture: Introduction to environmental association analysis and its application to understanding adaptation in invasive species.
+
+Tutorial 3: Genotype-by-environment association methods
 
 ### COURSE PREPARATION
 #### R
@@ -74,7 +88,7 @@ We will make use of several R packages throughout the course that you'll need to
 - vegan
 - vcfR
 
-You will need to install these packages using a few different ways. Some are Bioconductor packages, which are installed with BiocManager:
+You will need to install these packages using a few different methods. Some are Bioconductor packages, which are installed with BiocManager:
 ```
 if (!require("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
@@ -103,7 +117,7 @@ library(vcfR)
 Once you have achieved this, the tutorials will be able to be run. During each tutorial, you will run the library(packagename) command to load the package as required.
 
 #### BayPass
-There is one section of the course that is run outside of R,  in the program BayPass. So, you will also need to install BayPass on your system as part of the course preparation.
+There is one section of the course that is run outside of R, in the program BayPass. So, you will also need to install BayPass on your system as part of the course preparation.
 You should follow instructions here for your system:
 https://forge.inrae.fr/mathieu.gautier/baypass_public.
 In my case, I am working on a linux machine and used the following code in a terminal window:
@@ -116,3 +130,5 @@ You will then need to copy the g_baypass file (or your version of BayPass may be
 You can copy and paste the file across, or do it via the terminal/shell (replacing 'unname' with whatever your's is called):
 ```
 cp /home/uname/baypass_public/sources/g_baypass ~/Desktop/Physalia/DayTwo/.
+```
+In case you are unable to get BayPass to run, the relevant output files will be available for you to use during Day Two.
