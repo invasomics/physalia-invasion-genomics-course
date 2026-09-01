@@ -37,7 +37,7 @@ gl.snp2 <- vcfR2genlight(snp_vcf2)
 pop(gl.snp2) <- rep(pop.data2$V2)
 ```
 A few things to note:
-1. The dataset is now a 'Genlight' object, with 6,707 SNPs and 310 individuals
+1. The dataset is now a 'genlight' object, with 6,707 SNPs and 310 individuals
 2. There are a total of 28 populations in column 2 (V2) of the popmap file; each of the population names includes a prefix of 'Na', 'Ex', or 'In' (e.g., In1, In2) to show their native, expanded, and invasive status. I have also included a third column (V3), where I've reduced the dataset to three populations, corresponding to 'Native', 'Expanded', and 'Invasive'. You can confirm this by typing:
 ```
 pop.data2$V2
@@ -76,7 +76,7 @@ ggplot(data = QflyFs, aes(Var2, Var1, fill = value))+
                                    size = 12, hjust = 1))+
   coord_fixed()
 ```
-In this plot, I've used a 3-colour gradient for the FST values and the populations are labelled.
+In this plot, we've used a 3-colour gradient for the FST values and the populations are labelled.
 Examine the plot and describe its key trends with respect to the three main populations we have (i.e., native, expanded, invasive). Take a moment to think about what you might expect this plot to look like and whether it meets your expectations.
 
 You should see a pattern of higher differentiation among the pairwise comparisons that include the invasive populations, and lower values for the comparisons involving expanded and native populations. This is consistent with the admixture results (see below).
@@ -109,7 +109,7 @@ ggplot(data2, aes(x=PC1, y=PC2, color=pop)) +
   xlab("PC1 (1.99%)") +
   ylab("PC2 (1.34%)")
 ```
-Now, let's recolour the points by status (first we need to redefine populations by creating a new genlight object based on pop.data2$V3):
+Now, let's re-colour the points by status (first we need to redefine populations by creating a new genlight object based on pop.data2$V3):
 ```
 gl.snp3 <- vcfR2genlight(snp_vcf2)
 pop(gl.snp3) <- rep(pop.data2$V3)
@@ -132,7 +132,7 @@ ggplot(data3, aes(x=PC1, y=PC2, color=pop)) +
   xlab("PC1 (1.99%)") +
   ylab("PC2 (1.34%)")
 ```
-This PCA plot should show four main clusters, three of which are invasive (i.e., Alice Springs and the two Pacific Island populations); with the other corresponding to native and expanded populations in Australia.
+This PCA plot should show four main clusters, three of which are 'invasive' (i.e., Alice Springs and the two Pacific Island populations), with the other corresponding to native and expanded populations in Australia.
 
 Take a moment to think about whether this pattern meets your expectations. What does it say about how closely related the expanded and invasive populations are to the native ones? Does this make sense?
 
@@ -166,16 +166,16 @@ The next step is to work out the cross-entropy criterion for all runs in the sNM
 ```
 plot(projectalpha, col = "maroon4", pch = 19, cex = 1.2)
 ```
-This plot shows that 3 is the optimal number of ancestral populations, as that is the number of with the lowest cross-entropy value.
-Now you can work out the best run (i.e., replicate) for each of the tested K-values:
+This plot shows that 3 is the optimal number of ancestral populations, as that is the number with the lowest cross-entropy value.
+You can also work out the 'best' run (i.e., replicate) for each of the tested K-values:
 ```
 best2 <- which.min(cross.entropy(projectalpha, K = 2))
 best2
 best3 <- which.min(cross.entropy(projectalpha, K = 3))
 best3
 ```
-You can do this all the way up to best10 by creating those variables (best4, best5, etc) following the same procedure used for best2 and best3.
-Note that, due to variation in the algorithm, you may get different best runs from each other.
+You can do this all the way up to best10 by creating those variables (best4, best5, etc) following the same procedure used above for best2 and best3.
+Note that, due to variation in the algorithm, you may get different 'best' runs from each other.
 Now, let's plot the ancestry coefficients for our best run for K = 3:
 ```
 my.col3 <- c("#51692d","#56ba32","#f1c039")
@@ -255,9 +255,13 @@ ggplot(data=qlong, aes(x=Ind, y=value, fill = variable)) +
     panel.background = element_blank(),
     legend.position = "none")
 ```
-Examine the plot. What does it tell you about the evolutionary relationships and population structure among the three regions? Is it consistent with the other results so far?
+Examine the plot. Take a moment to consider what it tells you about the evolutionary relationships and population structure among the three main groups (native, invasive, expanded)? Is it consistent with the other results so far?
 
-Use the above code as a template and replot the results for a few different K-values, e.g., K=4 and K=6, to see how patterns might change.
+You should find an overall pattern of high admixture between native and all expanded populations; and lower admixture between native/expanded populations and Alice Springs, and between native/expanded and Pacific Islands populations at k=3. 
+
+Use the above code as a template and replot the results for a few different K-values, e.g., K=4 and K=6, to see how patterns might change. 
+
+At higher k values, you should start to see increasing admixture between native and expanded populations as the number of 'ancestral populations' increases. Admixture between native/expanded populations and Alice Springs or Pacific Island populations should stay comparatively lower, however, the two Pacific Island populations should split into two separate ancestral clusters at k=6 and above. Note that there are more Alice Springs individuals than Pacific Island ones, which make up nearly two thirds of the 'invasive' part of the admixture plots.
 
 ### Population assignment
 Finally, let's move into the adgenet package in R, using DAPC for population assignment. Note that DAPC can also be used to find clusters and generate PCAs, but we will use it just for population assignment here.
@@ -271,7 +275,7 @@ x.sup <- gl.snp2[-kept.id]
 nInd(x)
 nInd(x.sup)
 ```
-Now, run the DAPC analysis. Note that I did some initial steps to work out the best number of principal components (n.pca) and discriminant axes (n.da) to use here; see the manual for more information on how to run these steps (https://github.com/thibautjombart/adegenet/blob/master/tutorials/tutorial-dapc.pdf).
+Now, run the DAPC analysis (it will take a few minutes). Note that I did some initial steps to work out the best number of principal components (n.pca) and discriminant axes (n.da) to use here; see the manual for more information on how to run these steps (https://github.com/thibautjombart/adegenet/blob/master/tutorials/tutorial-dapc.pdf).
 ```
 dapc1 <- dapc(x,n.pca=11,n.da=15)
 pred.sup <- predict.dapc(dapc1, newdata=x.sup)
@@ -313,14 +317,14 @@ nInd(x2)
 nInd(x2.sup)
 dapc2 <- dapc(x2,n.pca=11,n.da=15)
 ```
-You should find an improvement in the percentage of corrrectly assigned individuals (to around 65%). You should also find a pattern in which the source for expanded populations is the native populations. The invaded populations show assignment to themselves, but we are looking at <25 supplementary individuals, so this is not surprising. As noted above, the best way to use this method in the context of inavsion genomics is to try to trace the source populations for intercepted border samples, or other invasive populations of unknown origin.
+You should find an improvement in the percentage of corrrectly assigned individuals (to around 65%). You should also find a pattern in which the source for expanded populations is the native populations. 
 
-Congratulations - this is the official end of Day One! You should now have a good feel for how to generate FST, PCA, Admixture, and Population assignment plots for your own data, including the use of different population labelling techniques to best interpret your results.
+Congratulations - this is the official end of Day One! You should now have a good feel for how to generate FST, PCA, Admixture, and Population Assignment plots for your own data, including the use of different population labelling techniques to best interpret your results.
 
 ### Bonus options for the extra keen:
-1. Try to work out how to run the DAPC population assignment using only a few invasive individuals as 'supplementary individuals'. This will involve playing around with the x <- gl.snp2[kept.id2] part of the code.
+1. Try to work out how to run the DAPC population assignment using more or less invasive individuals as 'supplementary individuals'. This will involve playing around with the kept.id parts of the code.
 2. Explore the DAPC manual and work out how to generate a PCA plot and a compoplot - how do they compare to the PCA/admixture methods used today?
-3. Explore the R package assignPOP, which extends DAPC for population assignment using a machine-learning framework. For this, you would first have to use a program like VCFTOOLS to extract separate VCF files for each population of interest. You'd then need to use something like vcf2genepop.pl (from: https://github.com/z0on/2bRAD_denovo/blob/master/vcf2genepop.pl) to convert each VCF file into a genepop file. Finally, you'd need to run the assignment in R with assignPOP. 
+3. Explore the R package assignPOP, which extends DAPC for population assignment using a machine-learning framework. For this, you would first have to use a program like VCFTOOLS to extract separate VCF files for each population of interest from the provided Qfly.vcf file. You'd then need to use something like vcf2genepop.pl (from: https://github.com/z0on/2bRAD_denovo/blob/master/vcf2genepop.pl) to convert each VCF file into a genepop file. Finally, you'd need to run the assignment in R with assignPOP. 
 There are many more steps, so this method will take some time to explore properly. See the tutorial here: https://alexkychen.github.io/assignPOP/
 
 ### Day One resources
