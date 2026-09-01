@@ -38,10 +38,17 @@ pop(gl.snp2) <- rep(pop.data2$V2)
 ```
 A few things to note:
 1. The dataset is now a 'Genlight' object, with 6,707 SNPs and 310 individuals
-2. There are a total of 28 populations in column 2 (V2) of the popmap file; each of the population names includes a prefix of 'Na', 'Ex', or 'In' (e.g., In1, In2) to show their native, expanded, and invasive status. I have also included a third column (V3), where I've reduced the dataset to three populations, corresponding to 'Native', 'Expanded', and 'Invasive'. 
+2. There are a total of 28 populations in column 2 (V2) of the popmap file; each of the population names includes a prefix of 'Na', 'Ex', or 'In' (e.g., In1, In2) to show their native, expanded, and invasive status. I have also included a third column (V3), where I've reduced the dataset to three populations, corresponding to 'Native', 'Expanded', and 'Invasive'. You can confirm this by typing:
+```
+pop.data2$V2
+```
+and
+```
+pop.data2$V3
+```
 
 ### FST
-Let's calculate pairwise FST for all populations using the StAMPP package:
+Let's calculate pairwise FST for all populations using the StAMPP package (the first line will take a few minutes to run). You can see more on the stamppFst command here: https://www.rdocumentation.org/packages/StAMPP/versions/1.6.3/topics/stamppFst (note nclusters = 6 sets the number of proccesor treads or cores to use during calculations and may need to be adjusted for your system):
 ```
 Qfly_Fst <- stamppFst(gl.snp2, nboots = 100, percent = 95, nclusters = 6)
 Fst <- Qfly_Fst$Fsts
@@ -69,15 +76,17 @@ ggplot(data = QflyFs, aes(Var2, Var1, fill = value))+
                                    size = 12, hjust = 1))+
   coord_fixed()
 ```
-In this plot, I've used a 3-colour gradient for the FST values and the populations are shown at the sides.
-Examine the plot and describe its key trends with respect to the three main populations we have (i.e., native, expanded, invasive). What did we expect this plot to look like?  Does it meet our expectations?
+In this plot, I've used a 3-colour gradient for the FST values and the populations are labelled.
+Examine the plot and describe its key trends with respect to the three main populations we have (i.e., native, expanded, invasive). Take a moment to think about what you might expect this plot to look like and whether it meets your expectations.
+
+You should see a pattern of higher differentiation among the pairwise comparisons that include the invasive populations, and lower values for the comparisons involving expanded and native populations. This is consistent with the admixture results (see below).
 
 ### PCA
-Now let's use the adgenet package to perform a PCA analysis:
+Now let's use the adgenet package to perform a PCA analysis (see more on the glPca command here: https://www.rdocumentation.org/packages/adegenet/versions/2.1.11/topics/glPca):
 ```
 snp.pca2 <- glPca(gl.snp2, nf = 10)
 ```
-Write PCA scores:
+Write PCA scores to a file:
 ```
 snp.pca.scores2 <- as.data.frame(snp.pca2$scores)
 snp.pca.scores2$pop <- pop(gl.snp2)
@@ -90,7 +99,7 @@ eig.perc <- 100*snp.pca2$eig/sum(snp.pca2$eig)
 eigen <- data.frame(eig.val,eig.perc)
 write.csv(eigen,file="Qfly_adegenetPCA_eigen-summary.csv",row.names=TRUE,quote=FALSE)
 ```
-Now, plot (taking the PC1 and PC2 percentages from the Qfly_adegenetPCA_eigen-summary.csv file:
+Now, plot (taking the PC1 and PC2 percentages from the first two rows of the 'eig.perc' column in the Qfly_adegenetPCA_eigen-summary.csv file):
 ```
 data2 <- read.delim("Qfly_adegenetPCA.txt")
 mycol <- c("#f1c039","#f37d21", "#51692d", "#56ba32")
@@ -100,11 +109,13 @@ ggplot(data2, aes(x=PC1, y=PC2, color=pop)) +
   xlab("PC1 (1.99%)") +
   ylab("PC2 (1.34%)")
 ```
-Now, let's recolour the points by status (first we need to redefine populations):
+Now, let's recolour the points by status (first we need to redefine populations by creating a new genlight object based on pop.data2$V3):
 ```
 gl.snp3 <- vcfR2genlight(snp_vcf2)
 pop(gl.snp3) <- rep(pop.data2$V3)
-
+```
+Now repeat the steps from above to generate the PCA:
+```
 snp.pca3 <- glPca(gl.snp3, nf = 10)
 snp.pca.scores3 <- as.data.frame(snp.pca3$scores)
 snp.pca.scores3$pop <- pop(gl.snp3)
@@ -121,8 +132,9 @@ ggplot(data3, aes(x=PC1, y=PC2, color=pop)) +
   xlab("PC1 (1.99%)") +
   ylab("PC2 (1.34%)")
 ```
-This PCA plot should show four main clusters, three of which are invasive (with the other corresponding to native and expanded populations).
-Does this meet your expectations? What does it say about how closely related the expanded and invasive populations are to the native ones? Does this make sense?
+This PCA plot should show four main clusters, three of which are invasive (i.e., Alice Springs and the two Pacific Island populations); with the other corresponding to native and expanded populations in Australia.
+
+Take a moment to think about whether this pattern meets your expectations. What does it say about how closely related the expanded and invasive populations are to the native ones? Does this make sense?
 
 ### Admixture
 Let's look at admixture patterns using the LEA package in R. First, install the packages:
@@ -143,7 +155,7 @@ Now, create the input files for LEA's sNMF function:
 vcf2geno(input.file = "Qfly.vcf", output.file = "Qfly.geno")
 ```
 You should see three new files in your directory: Qfly.vcfsnp, Qfly.removed, Qfly.geno.
-Do the clustering:
+Do the clustering (see more here: https://www.rdocumentation.org/packages/LEA/versions/1.4.0/topics/snmf):
 ```
 projectalpha <- NULL
 projectalpha <- snmf("Qfly.geno", K = 1:10, repetitions = 50, entropy = TRUE, CPU = 8, project = "new")
