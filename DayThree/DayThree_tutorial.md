@@ -193,17 +193,17 @@ Generate a climatic table from the previously read-in environmental dataset, ass
 env_data_std <- as.data.frame(env_data_std)
 row.names(env_data_std) <- c(env_data$pop)
 ```
-Now we need to infer population structure from the allele frequency data. We'll choose 10 PCs and look at the associated eigenvalues:
+Now we need to infer population structure from the allele frequency data. We'll choose 30 PCs and look at the associated eigenvalues:
 ```
 pca <- rda(AllFreq[,-1], scale=T)
-screeplot(pca, type = "barplot", npcs=10, main="PCA Eigenvalues")  
+screeplot(pca, type = "barplot", npcs=30, main="PCA Eigenvalues")  
 ```
 Each eigenvalue represents the amount of variation captured by its matching principal component. As a rule of thumb, you should use enough eigenvalues in the next step to explain a high percentage of your data's total variance, usually aiming for 80% to 95%. You can see the full set of eigenvalues with the following code:
 ```
-summary(eigenvals(pRDAfull, model = "constrained"))
-screeplot(pRDAfull)
+all_ev <- eigenvals(pca)
+all_ev
 ```
-You can see the percent variation each of the 26 total PCs (or RDAs) contributes. Based on this, 19 PCs explain ~85% of the total variance, so we'll use 19 PCs in the next step:
+You can see the total variacne each of the 27 total PCs contributes and work out the cumulative percentage by hand (e.g., the total variance sums to 6525.9999, so the first PC captures 668.8352/6525.999*100 = 10.25% of the total variance; you can continue this for the later PCs and keep summing for the cumulative variance). Based on this, 19 PCs explain ~85% of the total variance, so we'll use 19 PCs in the next step:
 ```
 PCs <- scores(pca, choices=c(1:19), display="sites", scaling=0)
 PopStruct <- data.frame(Population = AllFreq[,1], PCs)
@@ -230,7 +230,7 @@ RsquareAdj(pRDAfull)
 anova(pRDAfull)
 ```
 Based on the RsquareAdj value, we can see that the full model explains about 43% of variation.
-Let's now run models based on genetic and geography matrices (where environmental variables + latitude/longitude, and environmental variables + genetic data are factored out, respectively):
+Let's now run models based on genetic and geographic matrices (where environmental variables + latitude/longitude, and environmental variables + genetic data are factored out, respectively):
 ```
 pRDAgen <- rda(AllFreq[,-1] ~ PC1 + PC2 + PC3 + PC4 + PC5 + PC6 + PC7 + PC8 + PC9 + PC10
   + PC11 + PC12 + PC13 + PC14 + PC15 + PC16 + PC17 + PC18 + PC19 + Condition(longitude + latitude +  bio_4,bio_5,bio_9,bio_17,bio_18),  Variables)
@@ -243,36 +243,26 @@ anova(pRDAgeog)
 ```
 You should find that the genetic model is significant and explains about 45% of variation, while the geographic one is non-significant and explains <1% of variation.
 
-We can also check our RDA model for significance using formal tests, assessing both the full model and each constrained axis using F-statistics. 
-The null hypothesis is that no linear relationship exists between the SNP data and the environmental predictors.
-```
-signif.full <- anova.cca(pRDAfull, parallel=getOption("mc.cores")) 
-signif.full
-```
-The full model is significant, as we already saw above. For the next tests, each constrained axis is tested using all previous constrained axes as conditions. 
-The purpose is to determine which constrained axes we should investigate for candidate loci:
-```
-signif.axis <- anova.cca(pRDAfull, by="axis", parallel=getOption("mc.cores"))
-signif.axis
-```
-The first two axes are significant and the third is marginally non-significant, consistent with the scree plot from earlier.
+Let's look at the models in more detail now.
 
-Finally, vegan has a simple function for checking Variance Inflation Factors for the predictor variables used in the model:
+Vegan has a simple function for checking Variance Inflation Factors for the predictor variables used in the model:
 ```
 vif.cca(pRDAfull)
+vif.cca(pRDAgen)
+vif.cca(pRDAgeog)
 ```
-All values are below 10, which means that multicolinearity among these predictors shouldn’t be a problem for the model.
+Values below 10 indicate that multicolinearity among the predictors shouldn’t be a problem for the model. You should note that some of the values exceed 10, which ideally necessitates re-running the full comparison (i.e., all three models) with those variables removed.
 
 Let's now plot the PCA, first for axes 1 and 2; then for 1 and 3:
 ```
 plot(pRDAfull, scaling=3)     
 plot(pRDAfull, choices = c(1, 3), scaling=3)
 ```
-In these plots, the SNPs are in red (in the centre of each plot), and the individuals are the black circles. 
-The blue vectors are the environmental predictors. The relative arrangement of these items in the ordination space reflects their relationship with the ordination axes, which are linear combinations of the predictor variables.
-Note that these plot are not very useful for our dataset; you can look at the RDA tutorial to a nicer visual example.
+In these plots, the SNPs are in red (in the centre of each plot), and the individuals are the black open circles. 
+The blue vectors are the environmental and PC predictors. The relative arrangement of these items in the ordination space reflects their relationship with the ordination axes, which are linear combinations of the predictor variables.
+Note that these plots are not very useful for our dataset; you can look at the RDA tutorial to a nicer visual example.
 
-Next, we want to identify the candidate outliers.
+Next, we want to identify the candidate outliers from the RDA.
 To do this, we use the loadings of the SNPs in the ordination space to determine which SNPs are candidates for local adaptation.
 The SNP loadings are stored as 'species' in the RDA object. We’ll extract the SNP loadings from the first significant constrained axis:
 ```
@@ -288,7 +278,7 @@ outliers <- function(x,z){
   x[x < lims[1] | x > lims[2]]               # locus names in these tails
 }
 ```
-Now apply the function to axis 1. We’ll use a 3 standard deviation cutoff (two-tailed p-value = 0.0027), but you can also change this to other values (e.g., 2.5 corresponds to a p-value of 0.012).
+Now apply the function to RDA axis 1. We’ll use a 3 standard deviation cutoff (two-tailed p-value = 0.0027), but you can also change this to other values (e.g., 2.5 corresponds to a p-value of 0.012).
 ```
 cand1 <- outliers(load.rda[,1],3)   
 length(cand1) 
@@ -296,8 +286,8 @@ cand1 <- cbind.data.frame(rep(1,times=length(cand1)), names(cand1), unname(cand1
 colnames(cand1) <- c("axis","snp","loading")
 write.table(cand1, "RDAoutliers.txt")
 ```
-If you change the sd value, you should find you get 24 candidates on axis 1 at sd=3; 98 at sd=2.5; and 843 at sd=1.5.
-Export the values at sd=3 and keep this list for later comparison to other methods.
+You should find you get 23 candidates on axis 1 at sd=3; 99 at sd=2.5; and 844 at sd=1.5. However, you may get slightly different answers due to stochasticity in the model algorithm and/or if you remove colinear variables or use different sets of environmental variables.
+Export the values at sd=3 and keep this list for later comparison to the other methods.
 
 ### LFMM
 LFMM tests for association between loci and environmental variables, taking population structure into account by introducing hidden latent factors into the model and identifying non-random associations between SNPs and environmental variables. 
@@ -325,7 +315,7 @@ Perform association testing using the fitted model:
 ```
 pv <- lfmm_test(Y = gen, X = env_subset, lfmm = Qfly.lfmm, calibrate="gif")
 ```
-Plot QQ-plot:
+Plot the QQ-plot:
 ```
 pvalues <- pv$calibrated.pvalue 
 qqplot(rexp(length(pvalues), rate = log(10)),
@@ -333,13 +323,13 @@ qqplot(rexp(length(pvalues), rate = log(10)),
        pch = 19, cex = .4)
 abline(0,1)
 ```
-QQ-plot looks good! Also check genomic inflation factor (GIF) to get a sense of how well the model has accounted for confounding factors in the data:
+The QQ-plot shows some potential outliers. Also check genomic inflation factor (GIF) to get a sense of how well the model has accounted for confounding factors in the data:
 ```
 pv$gif
 ```
-An appropriately calibrated set of tests will have a GIF of around 1, so these values look good.
-Next, we can check to see how applying the GIF to the pvalues changes the pvalue distribution for each env variable. 
-In each case, we should see GIF-adjusted histogram looking generally flatter, with a peak for smaller pvalues (at the left hand side of the plot, near zero):
+An appropriately calibrated set of tests will have GIF values of around 1, so these values look good.
+Next, we can check to see how applying the GIF to the pvalues changes the pvalue distribution for each environmental variable. 
+In each case, we should see the GIF-adjusted histograms looking generally flatter, and potentially a peak for smaller pvalues (at the left hand side of the plot, near zero):
 ```
 hist(pv$pvalue[,1], main="Unadjusted p-values bio_4")        
 hist(pv$calibrated.pvalue[,1], main="GIF-adjusted p-values bio_4") 
@@ -355,12 +345,9 @@ hist(pv$calibrated.pvalue[,5], main="GIF-adjusted p-values bio_18")
 Let's now estimate adjusted p-values:
 ```
 pvalues <- pv$pvalue 
-zs <- pv$score  
-summary(zs) 
+zs <- pv$score   
 ```
-The summary function shows the z scores for each of the env variables that were used in the analysis.
-
-Finally, we need to convert the adjusted p-values to q-values, which provide a measure of each SNP’s significance, while taking into account the fact that thousands are simultaneously being tested. We'll then use an FDR threshold to control the number of false positive detections (given that our p-value distribution is “well-behaved”).
+Finally, we need to convert these adjusted p-values to q-values, to provide a measure of each SNP’s significance while taking into account the fact that thousands of SNPs are simultaneously being tested. We'll then use an FDR threshold to control the number of false positive detections (given that our p-value distribution is “well-behaved”).
 This code will then print out the candidate loci for each bio variable:
 ```
 scaffolds <- row.names(pvalues)
@@ -419,7 +406,7 @@ ggplot(pval_bio_4, aes(x=MRK, y = abs(log10pval), color = CHR)) + ##abs <- absol
   ggtitle("bio_4")
 ```
 Now, adapting the above code, plot the outlier SNPs for the other four bioclim variables. 
-For example, you'll change the first line to read: 'pval_bio_5 <- as.data.frame(-log10(pvals_df$bio_5))' and make similar adjustments all the way down to 'ggtitle("bio_5")'.
+For example, you'll change the relevant line to read: 'pval_bio_5 <- as.data.frame(-log10(pvals_df$bio_5))' and make similar adjustments all the way down to 'ggtitle("bio_5")'.
 The required LFMMoutliers_bio5_final.txt file (and those for the other bio variables) are provided in the Day3/RequiredFiles/ folder.
 
 ### Gradient Forest
@@ -455,9 +442,9 @@ A maximum number of 'splits' can be used to evaluate the gf model, as per the de
 ```
 maxLevel <- log2(0.368*nrow(env.gf)/2)
 ```
-And now run the model. The input is the combined climate, PCNM, and SNP data.
+And now run the model (see more information here: https://gradientforest.r-forge.r-project.org/). The input is the combined climate, PCNM, and SNP data.
 The other parts of the code define the predictor and response variables, and other parameters that are set to developer recommendations.
-You can ignore any errors that might show up in red.
+You can ignore any errors that might show up in red (the note about regression are to check whether we wish to calculate a classification or regression model - we do wish to use regression here, though the package automatically checks this because we have five or fewer unique values in the response variables).
 ```
 gf <- gradientForest(cbind(env.gf, AllFreq), predictor.vars=colnames(env.gf), response.vars=colnames(AllFreq), ntree=500, maxLevel=maxLevel, trace=T, corr.threshold=0.50)
 ```
@@ -465,13 +452,12 @@ Let's plot bar graphs depicting the importance of each spatial and climate varia
 ```
 plot(gf, plot.type = "O")
 ```
-Identify the important variables:
+Identify the important variables based on R2 weighted importance):
 ```
 gf
 ```
-Everyone's results may differ slightly, but you should find: PCNM1  bio_18 and PCNM2 are listed as 'important variables', while one or two of the others might also be listed (I ran it a few times and tended to return a total of five).
-How do these results compare to the Qfly paper (Figure 4)? Note that we used a few different bio variables to the paper, but you can compare the R2 weighted importance results for
-your results with Figure 4. Our results highlight the consistent importance of the spatial (PCNM1 and PCNM2) and precipitation (bio_18) variables, with bio_19 (precipitation) and bio_4/bio_5 (temperature) also potentially important.
+My analysis listed PCNM1, PCNM2, bio_18, bio_4, and bio_5 as 'important variables'. You might find slight differences in your results (I ran it a few times and tended to return a total of five).
+How do these/your results compare to the Qfly paper (Figure 4)? Note that we used a few different bioclimate variables to the paper, but you can compare the R2 weighted importance results for your results with Figure 4. Our results highlight the consistent importance of the spatial (PCNM1 and PCNM2) and temperature bio_4/bio_5 variables.
 
 Let's now determine which variables are most important in our gf model by plotting the 'turnover functions' that show how allelic composition changes along the spatial or environmental gradients.
 These plots are non-linear and large jumps show steep genetic changes along certain portions of the environmental gradient. The height that the function acheives on the right-hand side of the plot is the total importance and should match the R2 weighted importance barplots. First, organise the variables by importance and then plot:
@@ -479,7 +465,7 @@ These plots are non-linear and large jumps show steep genetic changes along cert
 by.importance <- names(importance(gf))
 plot(gf, plot.type = "C", imp.vars = by.importance, show.species = F, common.scale = T, cex.axis = 1, cex.lab = 1.2, line.ylab = 1, par.args = list(mgp = c(1.5, 0.5, 0), mar = c(2.5, 2, 2, 2), omi = c(0.2, 0.3, 0.2, 0.4)))
 ```
-What patterns do you see? Note areas where genetic variation changes abruptly (PCNM1, most likely highlight differences in lat/long between populations 27/28 from the rest).
+What patterns do you see? Note areas of abrupt change in genetic variation for PCNM1, this most likely highlights differences in latitude/longitude between populations 27/28 from the rest. You can directly compare bio_5 and bio_9 to Figure 5 in the paper, though note the different y-axis scales.
 
 We can also make plots of turnover functions for individual loci. In this case, each line within each panel represents allelic change at a single SNP. In each panel, you'll see that some SNPs show very steep changes along the environmental gradient. These might be especially good candidates for local adaptation along the gradient and are highlighted in the legend in each panel. 
 ```
@@ -490,9 +476,9 @@ Have a look at your outlier lists for each of the three methods, i.e., compare:
 1. RDAoutliers.txt
 2. LFMMoutliers.txt
 3. The legends in the last plots generated for the GF analysis show the putative outliers there.
-Are any of the outliers common across the different methods? If so, these would have high confidence for being under selection and worthy candidates for further exploration (e.g., gene annotation analysis, functional analysis).
+Are any of the outliers common across the different methods? If so, these would have high confidence for being under selection and be worthy candidates for further exploration (e.g., gene annotation analysis, functional analysis).
 
-Congratulations - this is the official end of Day Three! You should now have a good feel for how to examine relationships between SNPs, env variables, and geography using three different methods (RDA, LFMM, GF).
+Congratulations - this is the official end of Day Three! You should now have a good feel for how to examine relationships between SNPs, environmental variables, and geography using three different methods (RDA, LFMM, GF).
 
 ### Bonus step
 To try out a fourth method, check out generalised dissimilarity modeling (GDM) here: https://github.com/pgugger/LandscapeGenomics/blob/master/2017/Exercise4.md#generalized-dissimilarity-modeling-gdm
