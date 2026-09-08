@@ -3,8 +3,8 @@ Today, we'll again be working with the Qfly dataset. We'll use three key methods
 in explaining allele frequency patterns in the native and introduced ranges of the Queensland fruit fly:
 
 1. RDA
-3. LFMM
-4. Gradient Forest
+2. LFMM
+3. Gradient Forest
    
 Let's get into it!
 
@@ -63,7 +63,7 @@ Double check the distribution of points on the map (except for pop 28, which is 
 ozmap(x = "country")
 points(coords, pch=16)
 ```
-Next, use the "extract" function to get climate variables just for our 28 locations:
+Next, use the "extract" function to get climate variables just for our 28 locations. We'll add them all to a single data frame and then output them to a text file:
 ```
 val_bio_1 <- extract(x=bio_1, y=coords)
 val_bio_2 <- extract(x=bio_2, y=coords)
@@ -94,10 +94,10 @@ library(caret)
 my_cor <- cor.plot(df)
 hc  <- findCorrelation(my_cor, cutoff=0.70)
 hc  <- sort(hc)
-reduced_Data = df[,-c(hc)]
+reduced_Data <- df[,-c(hc)]
 print(reduced_Data)
 ```
-You should find that five variables are uncorrelated enough to use to represent the full dataset: val_bio_4, val_bio_5, val_bio_9, val_bio_17, val_bio_18. Remember these for later!
+You should find that five variables are uncorrelated enough (i.e., r < 0.70) to use to represent the full dataset: val_bio_4, val_bio_5, val_bio_9, val_bio_17, val_bio_18. Remember these for later!
 You'll also maybe spot that there is missing data for the three populations that are out of scale. Don't worry, we'll provide the full dataset to read in later.
 
 ### Generate required allele frequency data
@@ -110,7 +110,7 @@ library(vcfR)
 library(adegenet)
 ```
 Read in the VCF and convert it to a matrix (individuals in rows and SNPs in columns).
-SNPs will also need to be converted to genotype format with 0, 1, and 2: 0 when the individual is homozygous for the major allele, 1 when the individual is heterozygous, and 2 when the individual is homozygous for the second (or alternative) allele.
+SNPs will also need to be converted to genotype format with 0, 1, and 2: 0 when the individual is homozygous for the major allele, 1 when the individual is heterozygous, and 2 when the individual is homozygous for the second (or alternative) allele:
 ```
 data <- read.vcfR("Qfly.vcf")
 data
@@ -132,14 +132,14 @@ Look for any missing data:
 sum(is.na(gen))  
 ```
 We can see there are missing data here (62935 out of a total of 2018807 = ~3%). We will impute them below to fill in these gaps.
-Next, we need to assign population information to the genotype matrix (we use the nomatch part of the code to make sure all the individuals in the popmap file are present in our genotype file).
+We also need to assign population information to the genotype matrix (we use the nomatch part of the code to make sure all the individuals in the popmap file are present in our genotype file):
 ```
 Genotypes <- as.data.frame(gen)
 popmap <- read.table("Qfly_popmap.txt")
 Genotypes <- Genotypes[match(popmap$V1, row.names(Genotypes), nomatch = 0),]
 write.table(Genotypes,"Genotypes.txt", sep = "\t")
 ```
-We also need to do a bit of work on the Genotype file, as later steps don't like the presence of the ':', which is in the genotype names (e.g., NC_052499.1:84).
+We also need to do a bit of work on the genotype file, as later steps don't like the presence of the ':', which is in the genotype names (e.g., NC_052499.1:84).
 I've replaced the ':' with an underscore using sed in the command line as the file is too big to open with something like notepad.
 Sed works just like a search and replace: sed 's/:/_/g' Genotypes.txt > Genotypes2.txt.
 Now, read in the correctly formatted file:
@@ -149,7 +149,7 @@ Genotypes2 <- read.delim("Genotypes2.txt")
 We will use population allele frequencies (ranging from 0 to 1) instead of individual genotypes in the subsequent analyses.
 This is because we have several individual genotypes at each sampling site, meaning they all experienced the exact same climatic conditions. 
 Using population allele frequencies will also help with any uneven sample sizes across populations.
-Estimating population allele frequencies:
+Estimate population allele frequencies:
 ```
 AllFreq <- aggregate(Genotypes2, by = list(popmap$V2), function(x) mean(x, na.rm = T)/2)
 row.names(AllFreq) <- as.character(AllFreq$Group.1)
@@ -161,7 +161,7 @@ for (i in 1:ncol(AllFreq))
   AllFreq[which(is.na(AllFreq[,i])),i] <- median(AllFreq[-which(is.na(AllFreq[,i])),i], na.rm=TRUE)
 }
 ```
-And, filter on minor allele frequency (MAF) again (although this was done during the original SNP calling to produce the Qfly.vcf file, we may have now imputed some sites with small MAF, which we want to remove:
+And, filter on minor allele frequency (MAF) again (although this was done during the original SNP calling to produce the Qfly.vcf file, we may have now imputed some sites with small MAF, which we want to remove):
 ```
 freq_mean <- colMeans(AllFreq[,-1])
 ```
@@ -172,8 +172,7 @@ write.table(AllFreq, "Qfly_alleleFreq.txt", sep = "\t")
 ```
 ### RDA analysis
 Partial RDA (pRDA) analysis can be used to identify the contribution of climate, population structure, and geography in explaining genetic variation. 
-We will therefore use the 5 bioclimate variables (environmental data); population scores along the first three axes of a genetic PCA (genetic data); 
-and population longitude and latitude coordinates (geographic variation) in our analysis.
+We will therefore use the 5 uncorrelated bioclimate variables from above (environmental data); population scores along the first three axes of a genetic PCA (genetic data); and population longitude and latitude coordinates (geographic variation) in our analysis.
 First, read in the environmental and genetic data:
 ```
 env_data <- read.delim("Qfly_AllBioclim_Final.txt", header = TRUE)
@@ -184,64 +183,66 @@ that the variable units are comparable (e.g., precipitation in mm, and temperatu
 ```
 env_data_std <- scale(env_data[,-1:-3], center=TRUE, scale=TRUE)
 ```
-Recover scaling coefficients:
+Now we need to recover the 'scaling coefficients'. This is an important step in RDA becuase it is impossible to perfectly represent both the relationships among variables and the relationships among samples in a single low-dimensional plot at the same time. RDA creates a 'compromise' plot to overcome this and adjusting the scaling coefficients dictates which type of relationship is preserved during this scaling - you can either focus on scaling the response variables (also referred to as 'species') or the samples (also referred to as 'sites'); scaling by variable is best when aiming to find associations among them. 
 ```
 scale_env <- attr(env_data_std, 'scaled:scale')
 center_env <- attr(env_data_std, 'scaled:center')
 ```
-Generate a climatic table:
+Generate a climatic table from the previously read-in environmental dataset, assigning population names to each row:
 ```
 env_data_std <- as.data.frame(env_data_std)
 row.names(env_data_std) <- c(env_data$pop)
 ```
-Infer pop structure from allele frequnency data:
+Now we need to infer population structure from the allele frequency data. We'll choose 10 PCs and look at the associated eigenvalues:
 ```
 pca <- rda(AllFreq[,-1], scale=T)
 screeplot(pca, type = "barplot", npcs=10, main="PCA Eigenvalues")  
 ```
-We'll use the first three PCs:
+Each eigenvalue represents the amount of variation captured by its matching principal component. As a rule of thumb, you should use enough eigenvalues in the next step to explain a high percentage of your data's total variance, usually aiming for 80% to 95%. You can see the full set of eigenvalues with the following code:
 ```
-PCs <- scores(pca, choices=c(1:3), display="sites", scaling=0)
+summary(eigenvals(pRDAfull, model = "constrained"))
+screeplot(pRDAfull)
+```
+You can see the percent variation each of the 26 total PCs (or RDAs) contributes. Based on this, 19 PCs explain ~85% of the total variance, so we'll use 19 PCs in the next step:
+```
+PCs <- scores(pca, choices=c(1:19), display="sites", scaling=0)
 PopStruct <- data.frame(Population = AllFreq[,1], PCs)
-colnames(PopStruct) <- c("Population", "PC1", "PC2","PC3")
+colnames(PopStruct) <- c("Population","PC1","PC2","PC3","PC4","PC5","PC6","PC7","PC8","PC9","PC10","PC11","PC12","PC13","PC14","PC15","PC16","PC17","PC18","PC19")
 ```
 Now merge the PC data with the coordinates data (places, from above), and environmental data:
 ```
 Variables <- data.frame(places, PopStruct[,-1], env_data) 
 ```
-Subset this data to retain our uncorrelated bio variables from above:
+Subset this data to retain our uncorrelated bioclimate variables from above:
 ```
-env_subset <- subset(Variables, select = c(longitude,latitude,PC1,PC2,PC3,bio_4,bio_5,bio_9,bio_17,bio_18))
+env_subset <- subset(Variables, select = c(longitude,latitude,PC1,PC2,PC3,PC4,PC5,PC6,PC7,PC8,PC9,
+  PC10,PC11,PC12,PC13,PC14,PC15,PC16,PC17,PC18,PC19,bio_4,bio_5,bio_9,bio_17,bio_18))
 ```
-Look at the distribution of these remaining variables:
+Look at the distribution of the climate variables to ensure they don't look highly correlated:
 ```
-pairs.panels(env_subset[,6:10], scale=T)
+pairs.panels(env_subset[,22:26], scale=T)
 ```
 Looks pretty good! We're ready to run the full model:
 ```
-pRDAfull <- rda(AllFreq[,-1] ~ PC1 + PC2 + PC3 + longitude + latitude + bio_4+bio_5+bio_9+bio_17+bio_18, Variables)
+pRDAfull <- rda(AllFreq[,-1] ~ PC1 + PC2 + PC3 + PC4 + PC5 + PC6 + PC7 + PC8 + PC9 + PC10
+  + PC11 + PC12 + PC13 + PC14 + PC15 + PC16 + PC17 + PC18 + PC19 + longitude + latitude + bio_4 + bio_5 + bio_9 + bio_17 + bio_18, Variables)
 RsquareAdj(pRDAfull) 
 anova(pRDAfull)
 ```
-Based on the RsquareAdj value, we can see that the full model explains about 15% of variation.
-Let's now run models based on genetic and geography matrices (where env + lat/long, and env + genetic are factored out, respectively):
+Based on the RsquareAdj value, we can see that the full model explains about 43% of variation.
+Let's now run models based on genetic and geography matrices (where environmental variables + latitude/longitude, and environmental variables + genetic data are factored out, respectively):
 ```
-pRDAstruct <- rda(AllFreq[,-1] ~ PC1 + PC2 + PC3 + Condition(longitude + latitude +  bio_4,bio_5,bio_9,bio_17,bio_18),  Variables)
-RsquareAdj(pRDAstruct)  
-anova(pRDAstruct)
+pRDAgen <- rda(AllFreq[,-1] ~ PC1 + PC2 + PC3 + PC4 + PC5 + PC6 + PC7 + PC8 + PC9 + PC10
+  + PC11 + PC12 + PC13 + PC14 + PC15 + PC16 + PC17 + PC18 + PC19 + Condition(longitude + latitude +  bio_4,bio_5,bio_9,bio_17,bio_18),  Variables)
+RsquareAdj(pRDAgen)  
+anova(pRDAgen)
 
-pRDAgeog <- rda(AllFreq[,-1] ~ longitude + latitude + Condition(bio_4+bio_5+bio_9+bio_17+bio_18+ PC1 + PC2 + PC3),  Variables)
-RsquareAdj(pRDAgeog) #
+pRDAgeog <- rda(AllFreq[,-1] ~ longitude + latitude + Condition(bio_4 + bio_5 + bio_9 + bio_17 + bio_18 + PC1 + PC2 + PC3 + PC4 + PC5 + PC6 + PC7 + PC8 + PC9 + PC10 + PC11 + PC12 + PC13 + PC14 + PC15 + PC16 + PC17 + PC18 + PC19),  Variables)
+RsquareAdj(pRDAgeog) 
 anova(pRDAgeog)
 ```
-You should find that the genetic model is significant and explains about 16% of variation, while the geographic one is non-significant and explains <1% of variation.
-The variation explained is not very high for the full and genetic models, but this low explanatory power is not surprising given that we expect most of the SNPs in our dataset will not show a relationship with the environmental predictors (e.g., most SNPs will be neutral).
-Let's look at the full model in more detail now:
-```
-summary(eigenvals(pRDAfull, model = "constrained"))
-screeplot(pRDAfull)
-```
-Here, we can see that the first three constrained axes explain ~52% of the total variance. 
+You should find that the genetic model is significant and explains about 45% of variation, while the geographic one is non-significant and explains <1% of variation.
+
 We can also check our RDA model for significance using formal tests, assessing both the full model and each constrained axis using F-statistics. 
 The null hypothesis is that no linear relationship exists between the SNP data and the environmental predictors.
 ```
