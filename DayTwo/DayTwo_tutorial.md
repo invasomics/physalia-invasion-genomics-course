@@ -91,11 +91,11 @@ Note that I've provided the Qfly.bp (which I created using: python ./reshaper_ba
 To run BayPass you also need to have specific pairwise constrast files set up. This first example shows how to run BayPass using all native populations vs the invasive Alice population. You set this contrast up in BayPass by using a '1' to indicate the native populations, a '0' to indicate populations that should be ignored in the current analysis, and a '-1' to indicate the population for contrast (in this case, Alice). The ecotypes files you will need are all provided in the DayTwo folder.
 In a terminal window, type:
 ```
-./g_baypass -gfile Qfly.bp -contrastfile Qfly_NativevsAlice.ecotype -efile Qfly_NativevsAlice.ecotype -outprefix Qfly_NativevsAlice -nthreads 6
+./g_baypass -gfile Qfly.bp -contrastfile Qfly_NativevsAlice.ecotype -efile Qfly_NativevsAlice.ecotype -outprefix Qfly_NativevsAlice -nthreads 6 -seed 2026
 ```
-Note that you might need to change the number of threads to suit your computer (i.e., adjust -nthreads 6). This will take anywhere from ~5 mins to 30 mins or more, depending on the power of your computer.
+Note that you might need to change the number of threads to suit your computer (i.e., adjust -nthreads 6). This will take anywhere from ~2 mins to 30 mins or more, depending on the power of your computer.
 This example will produce a series of 9 output files with the prefix 'Qfly_NativevsAlice'. Of these, we are most interested in the 'Qfly_NativevsAlice_summary_contrast.out' file, which we will now read into R.
-If for some reason you cannot get BayPass to install and work, I have provided the three key output files in the DayTwo/RequiredFiles/BackupFiles directory. But, please do try to get BayPass to work on your own!
+If for some reason you cannot get BayPass to install and work, I have provided the three key BayPass output files in the DayTwo/RequiredFiles/BackupFiles directory. But, please do try to get BayPass to work on your own!
 
 #### Return to R
 Read in the contrast file and rename column 4 to be a bit more useful:
@@ -103,7 +103,7 @@ Read in the contrast file and rename column 4 to be a bit more useful:
 Alice.C2 <- read.table("Qfly_NativevsAlice_summary_contrast.out",h=T) 
 colnames(Alice.C2)[4]  <- "Log10pvals"
 ```
-Now, import the provided (DayTwo/RequiredFiles/ directory) scaffold list, which tells us how the loci are located onto scaffolds. The was achieved by running some commands in bash on the Qfly.vcf file: cat Qfly.vcf | grep -v "#" | cut -f3 > Qfly_scaffold_list.txt
+Now, import the provided (in the DayTwo/RequiredFiles/ directory) scaffold list, which tells us where the loci are located on the various scaffolds. This file was created by running some commands in bash on the Qfly.vcf file: cat Qfly.vcf | grep -v "#" | cut -f3 > Qfly_scaffold_list.txt
 Import this file into R, and append the column to the Alice.C2 dataframe:
 ```
 scaffolds <- read.table("Qfly_scaffold_list.txt")
@@ -115,7 +115,7 @@ Now, let's check the behaviour of the p-values associated with the C2 statistic:
 hist(10**(-1*Alice.C2$Log10pvals),freq=F,breaks=40)
 abline(h=1)
 ```
-We need to convert these p-values from log10 to normal and convert to q-values:
+This plot is similar to the histogram we created above for PCAdapt, which we later followed with Bonferroni correction. Here, we will convert the p-values from log10 to normal and convert to q-values:
 ```
 pvalues <- as.data.frame(10^-Alice.C2[,4]) 
 Alice.C2 <- cbind(Alice.C2,pvalues) 
