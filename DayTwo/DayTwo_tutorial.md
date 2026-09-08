@@ -27,37 +27,40 @@ Run PCadapt:
 Qfly_pcadapt <- read.pcadapt(Qfly_vcf, type = "vcf")
 ```
 Ignore the error about converting from vcf to pcadapt - it does still work currently; in future you might need to first convert your VCF file into BED file format (e.g., using PLINK software).
-Now, run the pcadapt function and plot the resulting screen plot:
+Now, run the pcadapt function and plot the resulting scree plot:
 ```
 Qfly_pcadapt_kplot <- pcadapt(input = Qfly_pcadapt, K = 20)
 plot(Qfly_pcadapt_kplot, option = "screeplot")
 ```
-You're looking for the point after which the curve starts to flatten out, so a K-value of 3 is most appropriate here. Now, run a PCA using K=3:
+This plot is set to test 20 values of K and the resulting plot displays the percentage of variance explained by each principal component (PC) in decreasing order to help you choose the optimal number of components (K). You're looking for the point on the plot after which the curve starts to flatten out, so in this plot, a K-value of 3 is most appropriate. Thus, run a PCA using K=3:
 ```
 Qfly_pcadapt_pca <- pcadapt(Qfly_pcadapt, K = 3)
-summary(Qfly_pcadapt_pca)
 ```
-Now check to see whether there is actually additional population structure on other PCs. First, read in the population data, then plot PCAs coloured by population for axes 1 vs 2 and axes 4 vs 5:
+Now check to see whether there is actually additional population structure on other PCs. First, read in the population data, then plot PCAs coloured by population:
 ```
 pop.data2 <- read.table("Qfly_popmap.txt", header = F)
 print(pop.data2)
 plot(Qfly_pcadapt_kplot, option = "scores", i = 1, j = 2, pop = pop.data2$V2)
-plot(Qfly_pcadapt_kplot, option = "scores", i = 4, j = 5, pop = pop.data2$V2)
 ```
-It looks like we capture the structure well with K=3.
-Now, let's plot a manhattan plot and a qq-plot:
+The PCA looks like we capture the population structure well with K=3 (see also results from Day One).
+Now, let's plot a qq-plot and a manhattan plot:
 ```
-plot(Qfly_pcadapt_pca, option = "manhattan")
 plot(Qfly_pcadapt_pca, option = "qqplot")
+plot(Qfly_pcadapt_pca, option = "manhattan")
 ```
-The manhattan plot shows the distribution of p-values for all SNPs, while the qqplot shows whether the dataset follows the expected uniform distribution.
-In this case, the plot confirms that most of the p-values follow the expected uniform distribution (i.e., the red line). 
-However, the smallest p-values are smaller than expected, confirming the presence of outliers.
-Next, let's examine the p-value frequency data and perform a Bonferroni correction for alpha=0.1:
+The qqplot shows whether the dataset follows the expected uniform distribution under a neutral model. In this case, the plot confirms that most of the p-values follow the expected uniform distribution (i.e., the red line). However, the right hand side of the plot shows points that depart substantially from the diagonal red line. These represent outlier loci potentially under selection.
+
+The manhattan plot shows the distribution of p-values for all SNPs that have a minor allele frequency > 0.05. The x-axis shows the SNPs, while the y-axis shows the negative base-10 logarithm of the p-values measuring the association between each SNP and the principal components.
+
+Next, let's examine the p-value frequency data:
 ```
 Qfly_pcadapt_pvalues <- as.data.frame(Qfly_pcadapt_pca$pvalues)
 hist(Qfly_pcadapt_pca$pvalues, xlab = "p-values", main = NULL, breaks = 50, col = "grey")
+```
+This shows you the distribution of the p-values. Under the null hypothesis (neutral evolution), p-values should show a uniform distribution - in other words, the histogram bars should look relatively flat and equal across most of the chart (from 0.1 to 1.0). If there are loci under potential selection, you will see a spike in the histogram near 0.0. This indicates an excess of loci with very small p-values, which are your candidate outliers (markers under selection). 
 
+Next, let's perform a Bonferroni correction for alpha=0.1:
+```
 Qfly_pcadapt_padj <- p.adjust(Qfly_pcadapt_pca$pvalues,method="bonferroni")
 alpha <- 0.05
 outliers <- which(Qfly_pcadapt_padj < alpha)
@@ -71,7 +74,7 @@ You can also print them to file:
 ```
 write.table(outliers, file="Qfly_pcadapt_outliers.txt")
 ```
-That's it for PCAdapt! We'll come back to the results later and see how they compare to BayPass.
+That's it for PCAdapt! We'll come back to the results later to see how they compare to BayPass.
 
 ### BayPass
 Now, you need to move outside of R. The first step is to install BayPass. To do this, follow the instructions here for your system: https://forge.inrae.fr/mathieu.gautier/baypass_public.
