@@ -115,7 +115,7 @@ Now, let's check the behaviour of the p-values associated with the C2 statistic:
 hist(10**(-1*Alice.C2$Log10pvals),freq=F,breaks=40)
 abline(h=1)
 ```
-This plot is similar to the histogram we created above for PCAdapt, which we later followed with Bonferroni correction. Here, we will convert the p-values from log10 to normal and convert to q-values:
+This plot is similar to the histogram we created above for PCAdapt, which we later followed with Bonferroni correction. Here, we will convert the p-values from log10 to normal, and then convert to q-values:
 ```
 pvalues <- as.data.frame(10^-Alice.C2[,4]) 
 Alice.C2 <- cbind(Alice.C2,pvalues) 
@@ -124,40 +124,38 @@ pvalues <- as.vector(Alice.C2$pvals)
 qval <- qvalue(p = pvalues)
 plot(qval$qvalues)
 abline(h=0.05)
-
+```
+Q-values are adjusted p-values used to control the False Discovery Rate (FDR) when identifying outlier loci under selection. Q-values < 0.05 are highly significant. Let's extract the SNPs that have q-values < 0.05 and write them to a file:
+```
 qvalues <- as.data.frame(qval$qvalues)
 Alice.C2 <- cbind(Alice.C2,qvalues)
 colnames(Alice.C2)[7]  <- "Qvals"
-```
-Note that q-values < 0.05 are highly significant. Let's extract the SNPs that have q-values < 0.05:
-```
+
 selected_SNPs <- Alice.C2[Alice.C2$Qvals < 0.05, ]
 write.table(selected_SNPs,"BPoutliers_NativevsAlice_FDR5.txt", sep = "\t")
 ```
-There should be ~90 outliers, though your number may vary slightly because of stochasticity in the algorithm. Let's plot them out:
+There should be 57 outliers. Though different BayPass runs may vary in the number of potential outliers detected because of stochasticity in the algorithm, or use of different software versions, we ran BayPass with a number seed, which should ensure identical results. Let's plot the outliers:
 ```
 ggplot(Alice.C2, aes(x=MRK, y = Log10pvals)) + 
   geom_point(show.legend = FALSE, alpha = 1, size = 2) +
   scale_color_gradient(low="#D19C1D", high="#472C1B") +
-  geom_point(selected_SNPs, mapping = aes(x=MRK, y = Log10pvals), color = "#EB4511", size = 2) +
   theme_classic()
 ```
-We can also replot these by chromosome, using the provided file, where scaffold names are updated to chromosome numbers (with the number 6 used for unplaced scaffolds):
+We can also replot these by chromosome, using the provided file, where scaffold names are updated to chromosome numbers (in the file, the number 6 is used for unplaced scaffolds):
 ```
 scaffolds2 <- read.table("Qfly_chromosomes-chrNumbers.txt", header = TRUE) 
 Alice.C2_2 <- cbind(Alice.C2, scaffolds2)
 ggplot(Alice.C2_2, aes(x=MRK, y = Log10pvals, color = CHR)) + 
   geom_point(show.legend = FALSE, alpha = 1, size = 2) +
   scale_color_gradient(low="#D19C1D", high="#472C1B") +
-  geom_point(selected_SNPs, mapping = aes(x=MRK, y = Log10pvals), color = "#EB4511", size = 2) +
   theme_classic()
 ```
 
 #### Next steps
 Re-run the above steps for the other two BayPass comparisons. In BayPass (outside of R), run:
 ```
-./g_bapyass -gfile Qfly.bp -contrastfile Qfly_NativevsExpanded.ecotype -efile Qly_NativevsExpanded.ecotype -outprefix Qfly_NativevsExpanded -nthreads 6
-./g_bapyass -gfile Qfly.bp -contrastfile Qfly_NativevsIslands.ecotype -efile Qly_NativevsIslands.ecotype -outprefix Qfly_NativevsIslands -nthreads 6
+./g_baypass -gfile Qfly.bp -contrastfile Qfly_NativevsExpanded.ecotype -efile Qfly_NativevsExpanded.ecotype -outprefix Qfly_NativevsExpanded -nthreads 6 -seed 2026
+./g_baypass -gfile Qfly.bp -contrastfile Qfly_NativevsIslands.ecotype -efile Qfly_NativevsIslands.ecotype -outprefix Qfly_NativevsIslands -nthreads 6 -seed 2026
 ```
 Then follow the rest of the code above to generate outlier lists for these two additional comparisons, creating these two BayPass output files:
 1. Qfly_NativevsExpanded_summary_contrast.out
@@ -168,7 +166,7 @@ Then, back in R, repeat the rest of the code to generate the outlier files:
 2. BPoutliers_NativevsIslands_FDR5.txt
 
 #### Common outliers
-Now, make a venn diagram to check for common SNPs between the three BayPass comparisons:
+Now, make a Venn diagram to check for common SNPs between the three BayPass comparisons:
 ```
 Native <- read.table("BPoutliers_NativevsAlice_FDR5.txt", header=T)
 Expanded <- read.table("BPoutliers_NativevsExpanded_FDR5.txt", header=T)
@@ -178,13 +176,14 @@ library(ggvenn)
 venn1 <- list(Native=Native$MRK, Expanded=Expanded$MRK, Islands=Islands$MRK)
 ggvenn(venn1, fill_color = c("#F8D210", "#593F1F", "#DEE3CA"), fill_alpha = 0.7, stroke_size = 0.2, set_name_size = 4, stroke_color = "black", show_percentage = FALSE)
 ```
+
 Let's also check to see how the BayPass result compares with PCAdapt. We already generated the table of PCAdapt outliers above, so:
 ```
 PCadapt <- read.table("Qfly_pcadapt_outliers.txt")
-venn2 <- list(ative=Native$MRK, Expanded=Expanded$MRK, Islands=Islands$MRK, PCAdapt=PCadapt$x)
+venn2 <- list(Native=Native$MRK, Expanded=Expanded$MRK, Islands=Islands$MRK, PCAdapt=PCadapt$x)
 ggvenn(venn2, fill_color = c("#F8D210", "#593F1F", "#DEE3CA", "grey"), fill_alpha = 0.7, stroke_size = 0.2, set_name_size = 4, stroke_color = "black", show_percentage = FALSE)
 ```
-Your results should look like those provided in the DayTwo folder (BayPassVenn.jpeg and FullVenn.jpeg).
+Your results should look like those provided in the DayTwo folder (BayPassVenn.jpeg and FullVenn.jpeg). You'll see that the results are a little different to those in the published article (which only compares the BayPass results among the different introduced clusters and also ran a more extensive BayPass analysis overall).
 Another nice way to plot these results is here:
 ```
 upset(
@@ -201,10 +200,7 @@ upset(
 ) 
 ```
 
-A final note on BayPass is that we've only run it once per contrast today. For robust use, it needs to be run 3-5 times per tested contrast, each time with a different seed, then the values in the output omega file should be checked to make sure the results are consistent. You can set the seed in BayPass by replacing 'INT' with an integer value:
-```
--seed INT
-```
+A final note on BayPass is that we've only run it once per contrast today. For robust use, it needs to be run 3-5 times per tested contrast, each time with a different seed, then the values in the output omega file should be checked to make sure the results are consistent.
 
 Congratulations - this is the official end of Day Two! You should now have a good feel for how to generate information on candidate adaptive outliers for your own data, using two different methods (PCAdapt and BayPass).
 
@@ -212,7 +208,8 @@ Congratulations - this is the official end of Day Two! You should now have a goo
 Functional annotation of candidate outlier genes is a big task and we don't have time to complete those steps today. For more information on how to complete those steps if you have genome annotation files available for your own data, see the tutorial here: https://github.com/Elahep/B.tryoni_PopGenomics/tree/main/4-GOterms
 
 ### Bonus steps
-If you wish to compare your results more directly with the Qfly publication (https://www.nature.com/articles/s41437-023-00657-y#MOESM1), try also generating BayPass results for a 'Native vs All invasive' population contrast. To achieve this, you will have to create an ecotype file, placing 1, 0, and -1 so that you have all Native populations coded as '1', all Expanded populations coded as '0', and the three invasive populations coded as '-1'. See if you can replicate the venn diagram in Figure 3b of the manuscript (though your exact numbers may vary a litte due to algorithm stochasticity, the relative patterns should be consistent). 
+1. Try running PCAdapt with K=4 instead of K=3. Do the results change very much?
+2. If you wish to compare your results more directly with the Qfly publication (https://www.nature.com/articles/s41437-023-00657-y#MOESM1), try also generating BayPass results for a 'Native vs All invasive' population contrast. To achieve this, you will have to create an ecotype file, placing 1, 0, and -1 so that you have all Native populations coded as '1', all Expanded populations coded as '0', and the three invasive populations coded as '-1'. See if you can replicate the venn diagram in Figure 3b of the manuscript (though your exact numbers may vary a litte due to algorithm stochasticity, the relative patterns should be consistent). 
 
 ### Resources for today:
 https://bcm-uga.github.io/pcadapt/articles/pcadapt.html
