@@ -119,7 +119,7 @@ Once you have achieved this, the tutorials will be able to be run. During each t
 #### BayPass
 There is one section of the course that is run outside of R, in the program BayPass. So, you will also need to install BayPass on your system as part of the course preparation.
 You should follow instructions here for your system:
-https://forge.inrae.fr/mathieu.gautier/baypass_public.
+https://forge.inrae.fr/mathieu.gautier/baypass_public
 In my case, I am working on a linux machine and used the following code in a terminal window:
 ```
 git clone https://forge.inrae.fr/mathieu.gautier/baypass_public.git
@@ -130,5 +130,18 @@ You will then need to copy the g_baypass file (or your version of BayPass may be
 You can copy and paste the file across, or do it via the terminal/shell (replacing 'unname' with whatever your's is called):
 ```
 cp /home/uname/baypass_public/sources/g_baypass ~/Desktop/Physalia/DayTwo/.
+```
+For Windows users, here is one option that might work (it involves first installing WSL (Windows subsystem for linux); which enables running a linux environment on your Windows computer without a traditional virtual machine or dual-boot setup), running from the Windows powershell:
+```
+wsl --install
+wsl
+wsl --install -d Ubuntu
+sudo apt update
+sudo apt install build-essential gfortran
+cd ~
+git clone https://forge.inrae.fr/mathieu.gautier/baypass_public.git
+cd baypass_public/sources
+make clean all FC=gfortran
+cp g_baypass /mnt/c/Users/GGPC/OneDrive/Desktop/Day2tutorial/
 ```
 In case you are unable to get BayPass to run, the relevant output files will be available for you to use during Day Two.
