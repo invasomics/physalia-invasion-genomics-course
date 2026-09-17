@@ -203,7 +203,7 @@ Each eigenvalue represents the amount of variation captured by its matching prin
 all_ev <- eigenvals(pca)
 all_ev
 ```
-You can see the total variacne each of the 27 total PCs contributes and work out the cumulative percentage by hand (e.g., the total variance sums to 6525.9999, so the first PC captures 668.8352/6525.999*100 = 10.25% of the total variance; you can continue this for the later PCs and keep summing for the cumulative variance). Based on this, 19 PCs explain ~85% of the total variance, so we'll use 19 PCs in the next step:
+You can see the total variance each of the 27 total PCs contributes and work out the cumulative percentage by hand (e.g., the total variance sums to 6525.9999, so the first PC captures 668.8352/6525.999*100 = 10.25% of the total variance; you can continue this for the later PCs and keep summing for the cumulative variance). Based on this, 19 PCs explain ~85% of the total variance, so we'll use 19 PCs in the next step:
 ```
 PCs <- scores(pca, choices=c(1:19), display="sites", scaling=0)
 PopStruct <- data.frame(Population = AllFreq[,1], PCs)
