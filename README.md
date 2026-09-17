@@ -142,6 +142,6 @@ cd ~
 git clone https://forge.inrae.fr/mathieu.gautier/baypass_public.git
 cd baypass_public/sources
 make clean all FC=gfortran
-cp /home/uname/baypass_public/sources/g_baypass ~/Desktop/Physalia/DayTwo/
+cp g_baypass ~/Desktop/Physalia/DayTwo/
 ```
 In case you are unable to get BayPass to run, the relevant output files will be available for you to use during Day Two.
