@@ -93,8 +93,9 @@ In a terminal window, type:
 ```
 ./g_baypass -gfile Qfly.bp -contrastfile Qfly_NativevsAlice.ecotype -efile Qfly_NativevsAlice.ecotype -outprefix Qfly_NativevsAlice -nthreads 6 -seed 2026
 ```
-Note that you might need to change the number of threads to suit your computer (i.e., adjust -nthreads 6). This will take anywhere from ~2 mins to 30 mins or more, depending on the power of your computer.
-This example will produce a series of 9 output files with the prefix 'Qfly_NativevsAlice'. Of these, we are most interested in the 'Qfly_NativevsAlice_summary_contrast.out' file, which we will now read into R.
+Note that you might need to change the number of threads to suit your computer (i.e., adjust -nthreads 6). 
+This analysis will take anywhere from ~2 mins to 30 mins or more, depending on the specs of your computer.
+This analysis will produce a series of 9 output files with the prefix 'Qfly_NativevsAlice'. Of these, we are most interested in the 'Qfly_NativevsAlice_summary_contrast.out' file, which we will now read into R.
 If for some reason you cannot get BayPass to install and work, I have provided the three key BayPass output files in the DayTwo/RequiredFiles/BackupFiles directory. But, please do try to get BayPass to work on your own!
 
 #### Return to R
@@ -134,7 +135,7 @@ colnames(Alice.C2)[7]  <- "Qvals"
 selected_SNPs <- Alice.C2[Alice.C2$Qvals < 0.05, ]
 write.table(selected_SNPs,"BPoutliers_NativevsAlice_FDR5.txt", sep = "\t")
 ```
-There should be 57 outliers. Though different BayPass runs may vary in the number of potential outliers detected because of stochasticity in the algorithm, or use of different software versions, we ran BayPass with a number seed, which should ensure identical results. Let's plot the outliers:
+There should be ~57 outliers. Though different BayPass runs may vary in the absolute number of potential outliers detected because of stochasticity in the algorithm or use of different software versions/computer platforms, you should see a similar trend in your plots to those in the manuscript. Let's create the outlier plot:
 ```
 ggplot(Alice.C2, aes(x=MRK, y = Log10pvals)) + 
   geom_point(show.legend = FALSE, alpha = 1, size = 2) +
@@ -183,7 +184,7 @@ PCadapt <- read.table("Qfly_pcadapt_outliers.txt")
 venn2 <- list(Native=Native$MRK, Expanded=Expanded$MRK, Islands=Islands$MRK, PCAdapt=PCadapt$x)
 ggvenn(venn2, fill_color = c("#F8D210", "#593F1F", "#DEE3CA", "grey"), fill_alpha = 0.7, stroke_size = 0.2, set_name_size = 4, stroke_color = "black", show_percentage = FALSE)
 ```
-Your results should look like those provided in the DayTwo folder (BayPassVenn.jpeg and FullVenn.jpeg). You'll see that the results are a little different to those in the published article (which only compares the BayPass results among the different introduced clusters and also ran a more extensive BayPass analysis overall).
+Your results should look similar to those provided in the DayTwo folder (BayPassVenn.jpeg and FullVenn.jpeg), with some potential absolute differences driven by computer platform and algorithm run variation. You'll see that the results are a little different to those in the published article (which only compares the BayPass results among the different introduced clusters and also ran a more extensive BayPass analysis overall).
 Another nice way to plot these results is here:
 ```
 upset(
@@ -209,7 +210,7 @@ Functional annotation of candidate outlier genes is a big task and we don't have
 
 ### Bonus steps
 1. Try running PCAdapt with K=4 instead of K=3. Do the results change very much?
-2. If you wish to compare your results more directly with the Qfly publication (https://www.nature.com/articles/s41437-023-00657-y#MOESM1), try also generating BayPass results for a 'Native vs All invasive' population contrast. To achieve this, you will have to create an ecotype file, placing 1, 0, and -1 so that you have all Native populations coded as '1', all Expanded populations coded as '0', and the three invasive populations coded as '-1'. See if you can replicate the venn diagram in Figure 3b of the manuscript (though your exact numbers may vary a litte due to algorithm stochasticity, the relative patterns should be consistent). 
+2. If you wish to compare your results more directly with the Qfly publication (https://www.nature.com/articles/s41437-023-00657-y#MOESM1), try also generating BayPass results for a 'Native vs All invasive' population contrast. To achieve this, you will have to create an ecotype file, placing 1, 0, and -1 so that you have all Native populations coded as '1', all Expanded populations coded as '0', and the three invasive populations coded as '-1'. See if you can replicate the Venn diagram in Figure 3b of the manuscript (though your exact numbers may vary a litte, the relative patterns should be consistent). 
 
 ### Resources for today:
 https://bcm-uga.github.io/pcadapt/articles/pcadapt.html
