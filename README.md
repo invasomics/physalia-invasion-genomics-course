@@ -129,7 +129,7 @@ make clean all FC=gfortran
 You will then need to copy the g_baypass file (or your version of BayPass may be called ifx_baypass or i_baypass) to your working directory (from baypass_public/sources).
 You can copy and paste the file across, or do it via the terminal/shell (replacing 'unname' with whatever your's is called):
 ```
-cp /home/uname/baypass_public/sources/g_baypass ~/Desktop/Physalia/DayTwo/.
+cp /home/uname/baypass_public/sources/g_baypass ~/Desktop/Physalia/DayTwo/
 ```
 For Windows users, here is one option that might work (it involves first installing WSL (Windows subsystem for linux); which enables running a linux environment on your Windows computer without a traditional virtual machine or dual-boot setup), running from the Windows powershell:
 ```
@@ -142,6 +142,6 @@ cd ~
 git clone https://forge.inrae.fr/mathieu.gautier/baypass_public.git
 cd baypass_public/sources
 make clean all FC=gfortran
-cp g_baypass /mnt/c/Users/GGPC/OneDrive/Desktop/Day2tutorial/
+cp /home/uname/baypass_public/sources/g_baypass ~/Desktop/Physalia/DayTwo/
 ```
 In case you are unable to get BayPass to run, the relevant output files will be available for you to use during Day Two.
