@@ -48,7 +48,7 @@ pop.data2$V3
 ```
 
 ### FST
-Let's calculate pairwise FST for all populations using the StAMPP package (the first line will take a few minutes to run). You can see more on the stamppFst command here: https://www.rdocumentation.org/packages/StAMPP/versions/1.6.3/topics/stamppFst (note nclusters = 6 sets the number of proccesor treads or cores to use during calculations and may need to be adjusted for your system):
+Let's calculate pairwise FST for all populations using the StAMPP package (the first line will take a few minutes to run). You can see more on the stamppFst command here: https://www.rdocumentation.org/packages/StAMPP/versions/1.6.3/topics/stamppFst (note nclusters = 6 sets the number of proccesor threads or cores to use during calculations and may need to be adjusted for your system):
 ```
 Qfly_Fst <- stamppFst(gl.snp2, nboots = 100, percent = 95, nclusters = 6)
 Fst <- Qfly_Fst$Fsts
